@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	snakeBodyStyle, snakeDeadStyle, snakeBoxStyle, snakeBorderStyle, foodStyle tcell.Style
+	snakeBodyStyle, snakeDeadStyle, snakeBoxStyle, snakeBorderStyle, foodStyle, textStyle tcell.Style
 )
 
 func init() {
@@ -20,6 +20,7 @@ func init() {
 	snakeBodyStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	snakeDeadStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
 	foodStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorGreen)
+	textStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 }
 
 func drawSnake(s tcell.Screen, x, y int, snake *snake, dead bool) {
@@ -62,6 +63,13 @@ func drawBox(s tcell.Screen, x, y int, w, h int) {
 	for j := 1; j < h-1; j++ {
 		s.SetContent(x+0, y+j, '▒', nil, snakeBorderStyle)
 		s.SetContent(x+w-1, y+j, '▒', nil, snakeBorderStyle)
+	}
+}
+
+func drawString(s tcell.Screen, x, y int, text string) {
+	for _, r := range text {
+		s.SetContent(x, y, r, nil, textStyle)
+		x++
 	}
 }
 
@@ -124,6 +132,9 @@ func main() {
 	defer ticker.Stop()
 
 	boxX, boxY, boxW, boxH := 10, 10, 70, 26
+	scoreX, scoreY := boxX+boxW+1, boxY+boxH/2-2
+	levelX, levelY := scoreX, scoreY+1
+	tipsX, tipsY := levelX, levelY+1
 	model := newModel(boxW-2, boxH-2)
 	drawBox(s, boxX, boxY, boxW, boxH)
 
@@ -156,5 +167,11 @@ func main() {
 		clearBox(s, boxX, boxY, boxW, boxH)
 		drawSnake(s, boxX, boxY, &model.snake, model.dead)
 		drawFood(s, boxX, boxY, &model.food)
+		drawString(s, scoreX, scoreY, fmt.Sprintf("score: %d", model.score))
+		drawString(s, levelX, levelY, fmt.Sprintf("level: %d", model.level))
+		drawString(s, tipsX, tipsY, "move: WSAD")
+		drawString(s, tipsX, tipsY+1, "restart: R")
+		drawString(s, tipsX, tipsY+2, "quit: ESC")
+
 	}
 }
