@@ -120,7 +120,7 @@ func main() {
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(32 * time.Millisecond)
 	defer ticker.Stop()
 
 	boxX, boxY, boxW, boxH := 10, 10, 70, 26
@@ -151,7 +151,7 @@ func main() {
 			}
 
 		case <-ticker.C:
-			model.processTimer()
+			model.processTick()
 		}
 		clearBox(s, boxX, boxY, boxW, boxH)
 		drawSnake(s, boxX, boxY, &model.snake, model.dead)
