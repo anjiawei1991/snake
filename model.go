@@ -12,11 +12,11 @@ type model struct {
 	dead          bool
 }
 
-func newModel() *model {
+func newModel(w, h int) *model {
 	c := model{
-		snake:  snake{points: []point{{30, 30}, {29, 30}}},
-		width:  50,
-		height: 50,
+		snake:  snake{points: []point{{w / 2, h / 2}, {w/2 - 1, h / 2}}},
+		width:  w,
+		height: h,
 	}
 	rand.Seed(time.Now().Unix())
 	c.randomFood()
@@ -30,7 +30,7 @@ func (c *model) randomFood() {
 }
 
 func (c *model) restart() {
-	c.snake = snake{points: []point{{30, 30}, {29, 30}}}
+	c.snake = snake{points: []point{{c.width / 2, c.height / 2}, {c.width/2 - 1, c.height / 2}}}
 	c.dead = false
 	c.randomFood()
 }
@@ -45,7 +45,7 @@ func (c *model) processMove(d direction) {
 	if len(all) >= 2 && pt == all[1] {
 		return
 	}
-	if pt.x < 0 || pt.x > c.width || pt.y < 0 || pt.y > c.height {
+	if pt.x < 0 || pt.x >= c.width || pt.y < 0 || pt.y >= c.height {
 		c.dead = true
 		return
 	}

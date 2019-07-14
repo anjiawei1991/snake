@@ -11,36 +11,64 @@ import (
 )
 
 var (
-	snakeBodyStyle, snakeBoxStyle, foodStyle, snakeBoxStyleDead tcell.Style
+	snakeBodyStyle, snakeDeadStyle, snakeBoxStyle, snakeBorderStyle, foodStyle tcell.Style
 )
 
 func init() {
+	snakeBorderStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	snakeBoxStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorBlack)
-	snakeBoxStyleDead = tcell.StyleDefault.Background(tcell.ColorRed).Foreground(tcell.ColorBlack)
 	snakeBodyStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	snakeDeadStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
 	foodStyle = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorGreen)
 }
 
-func drawSnake(s tcell.Screen, x, y int, snake *snake) {
+func drawSnake(s tcell.Screen, x, y int, snake *snake, dead bool) {
 	pts := snake.getAll()
 
-	for _, pt := range pts {
-		screenX, screenY := pt.x*2+x, pt.y+y
-		s.SetContent(screenX, screenY, tcell.RuneBlock, nil, snakeBodyStyle)
-		s.SetContent(screenX+1, screenY, tcell.RuneBlock, nil, snakeBodyStyle)
+	style := snakeBodyStyle
+	if dead {
+		style = snakeDeadStyle
+	}
+
+	for i, pt := range pts {
+		if i == 0 {
+			r := '@'
+			if dead {
+				r = 'x'
+			}
+			s.SetContent(pt.x+x+1, pt.y+y+1, r, nil, style)
+		} else {
+			s.SetContent(pt.x+x+1, pt.y+y+1, 'o', nil, style)
+		}
 	}
 }
 
 func drawFood(s tcell.Screen, x, y int, food *point) {
-	screenX, screenY := food.x*2+x, food.y+y
-	s.SetContent(screenX, screenY, tcell.RuneBlock, nil, foodStyle)
-	s.SetContent(screenX+1, screenY, tcell.RuneBlock, nil, foodStyle)
+	screenX, screenY := food.x+x+1, food.y+y+1
+	s.SetContent(screenX, screenY, '$', nil, foodStyle)
 }
 
-func drawBox(s tcell.Screen, x, y int, w, h int, style tcell.Style) {
-	for i := 0; i < w; i++ {
-		for j := 0; j < h; j++ {
-			s.SetContent(x+i, y+j, ' ', nil, style)
+func drawBox(s tcell.Screen, x, y int, w, h int) {
+	s.SetContent(x+0, y+0, '┌', nil, snakeBorderStyle)
+	s.SetContent(x+w-1, y+0, '┐', nil, snakeBorderStyle)
+	s.SetContent(x+0, y+h-1, '└', nil, snakeBorderStyle)
+	s.SetContent(x+w-1, y+h-1, '┘', nil, snakeBorderStyle)
+
+	for i := 1; i < w-1; i++ {
+		s.SetContent(x+i, y+0, '-', nil, snakeBorderStyle)
+		s.SetContent(x+i, y+h-1, '-', nil, snakeBorderStyle)
+	}
+
+	for j := 1; j < h-1; j++ {
+		s.SetContent(x+0, y+j, '▒', nil, snakeBorderStyle)
+		s.SetContent(x+w-1, y+j, '▒', nil, snakeBorderStyle)
+	}
+}
+
+func clearBox(s tcell.Screen, x, y int, w, h int) {
+	for i := 1; i < w-1; i++ {
+		for j := 1; j < h-1; j++ {
+			s.SetContent(x+i, y+j, ' ', nil, snakeBoxStyle)
 		}
 	}
 }
@@ -95,8 +123,9 @@ func main() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	model := newModel()
-	boxX, boxY, boxW, boxH := 20, 5, 100, 50
+	boxX, boxY, boxW, boxH := 10, 10, 70, 26
+	model := newModel(boxW-2, boxH-2)
+	drawBox(s, boxX, boxY, boxW, boxH)
 
 	for {
 		s.Show()
@@ -124,18 +153,8 @@ func main() {
 		case <-ticker.C:
 			model.processTimer()
 		}
-		s.Fill(' ', tcell.StyleDefault.Background(tcell.ColorGray))
-
-		if model.dead {
-			drawBox(s, boxX, boxY, boxW, boxH, snakeBoxStyleDead)
-		} else {
-			drawBox(s, boxX, boxY, boxW, boxH, snakeBoxStyle)
-		}
-		drawSnake(s, boxX, boxY, &model.snake)
+		clearBox(s, boxX, boxY, boxW, boxH)
+		drawSnake(s, boxX, boxY, &model.snake, model.dead)
 		drawFood(s, boxX, boxY, &model.food)
-
-		if model.dead {
-			snakeBoxStyle = snakeBoxStyle.Background(tcell.ColorRed)
-		}
 	}
 }
